@@ -12,8 +12,7 @@ $(function(){
 		return getCategories();
 	}).then(function(data){
 		console.log("GET CATEGORIES DATA" , data);
-		getConferancePathArray(data);
-		
+		return conferencePathArray = getConferancePathArray(data);
 	}).then(function(){		
 		return getTopics();
 	}).then(function(data){
@@ -22,13 +21,15 @@ $(function(){
 
 		var optionValue = $("#triggerDayChange").val();
 
+		console.log("conferencePathArray",conferencePathArray);
+
 		buildTable(topics, optionValue, conferencePathArray);
 
 
 		// Handle Day Change
 		$('#triggerDayChange').on("change",  function(){
 			var selectValue = $(this).val();
-			buildTable(topics, selectValue);
+			buildTable(topics, selectValue, conferencePathArray);
 		});
 
 		// $('#triggerDayChange').trigger("change", function(){
@@ -202,7 +203,7 @@ function getConferancePathArray(data) {
 		return result;
 	},[]);
 
-	conferencePathArray = conferencePathFinal;
+	return conferencePathFinal;
 	// console.log("conf path" , conferencePathFinal);
 }
 
@@ -264,7 +265,7 @@ function buildCard(rooms, obj, conferencePathArray) {
 	});
 
 	var color = "#909090";
-	// console.log(colorArray);
+	console.log(colorArray);
 
 	if (_.size(colorArray) > 0) {
 		color = colorArray[0].color;
