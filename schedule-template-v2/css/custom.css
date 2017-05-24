@@ -7,13 +7,13 @@ body {
 }
 
 #schedule-rooms .room {
-	float: left;
-	    width: 300px;
+	    float: left;
+    width: 300px;
     text-align: center;
-   
     font-weight: 700;
-    color: #848484;
+    color: #000000;
     font-size: 14px;
+    text-transform: uppercase;
 }
 #schedule-rooms {
 	padding-top: 20px;
@@ -31,8 +31,11 @@ body {
 }
 
 #schedule-timeslots {
-	color: #848484;
-	padding-right: 1rem !important;
+	   color: #868686;
+    padding-right: 1rem !important;
+    background-color: #1f1f1f;
+    font-weight: 400;
+    font-size: 14px;
 }
 #schedule-topic {
 	position: relative;
@@ -51,4 +54,8 @@ body {
 #schedule-wrapper {
 	overflow-x: scroll;
 	overflow-y: hidden;
+}
+
+#schedule-plan {
+	    background-color: #f7f7f7;
 }
