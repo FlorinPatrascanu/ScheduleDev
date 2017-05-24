@@ -25,9 +25,14 @@ body {
 #schedule-timeslots .timeslot span {
 	display: inline-block;
 	/*width: 50px;*/
+	line-height: 40px;
 }
-#schedule-timeslots .timeslot:nth-child(4n + 6) span {
-	border-bottom: 1px solid #ff3232;
+// #schedule-timeslots .timeslot:nth-child(4n + 6) span {
+// 	border-bottom: 1px solid #ff3232;
+// }
+
+#schedule-timeslots .timeslot:nth-child(4n + 6) {
+    border-bottom: 1px solid #840101;
 }
 
 #schedule-timeslots {
