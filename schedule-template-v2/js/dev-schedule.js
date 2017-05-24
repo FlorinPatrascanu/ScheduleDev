@@ -263,7 +263,7 @@ function buildCard(rooms, obj, conferencePathArray) {
 		return _.includes(obj.categoryIDs, o.id)
 	});
 
-	var color = "";
+	var color = "#909090";
 	// console.log(colorArray);
 
 	if (_.size(colorArray) > 0) {
