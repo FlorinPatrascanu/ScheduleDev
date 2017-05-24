@@ -8,18 +8,21 @@ $(function(){
 
 	$.when(getDays()).then(function(data){
 		return buildSelects(data);
-	}).then(function(data){		
+	}).then(function(){
+		return getCategories();
+	}).then(function(data){
+		console.log("GET CATEGORIES DATA" , data);
+		getConferancePathArray(data);
+		
+	}).then(function(){		
 		return getTopics();
 	}).then(function(data){
 
 		handleTopics(data);
-		console.log("TOPICSGOOD", topics);
+
 		var optionValue = $("#triggerDayChange").val();
 
-		
-		
-		
-		buildTable(topics, optionValue);
+		buildTable(topics, optionValue, conferencePathArray);
 
 
 		// Handle Day Change
@@ -42,9 +45,12 @@ var daysUrl = 'http://api.eventpoint.com/2.3/program/days?code=nav2016us&apikey=
 var topicsUrl = 'http://api.eventpoint.com/2.3/program/topics?code=nav2016us&apikey=a325a4c2a3ed435eb1eb9e8f0dddeb03';
 var roomsUrl = 'http://api.eventpoint.com/2.3/program/rooms?code=nav2016us&apikey=a325a4c2a3ed435eb1eb9e8f0dddeb03';
 var speakersUrl = 'http://api.eventpoint.com/2.3/program/speakers?code=nav2016us&apikey=a325a4c2a3ed435eb1eb9e8f0dddeb03';
+var conferencePathArray = [];
 
 var topics = [];
 var days = [];
+var categories = [];
+
 
 var cardUnitVertical = 40;
 var cardUnitHorizontal = 300;
@@ -154,19 +160,70 @@ function handleTopics(data) {
 
 	});
 
-	console.log("TOPICS: ", topics);
-
 }
 
 
-function buildTable(topics, data) {
+function getCategories() {
+	
+	var deferred = $.Deferred();
+	var categoriesUrl = 'https://api.eventpoint.com/2.3/program/categories?code=nav2016us&apikey=a325a4c2a3ed435eb1eb9e8f0dddeb03';
+	$.ajax({
+		url: categoriesUrl,
+		type: 'GET',
+		dataType: 'jsonp'
+	})
+	.done(function(response){
+		console.log("AJAX CALL CATEGORIES " , response);
+		deferred.resolve(response);
+	})
+	.fail(function(error) {
+		deferred.reject(error);
+		console.log("error");
+	});
+	return deferred.promise();
+}
+
+function getConferancePathArray(data) {
+	// console.log("handle cat", result);
+	var colors = ["#083D77" , "#DA4167" , "#F4D35E" , "#49DCB1" , "#48284A" , "#F26419" , "#A5243D" , "#5F7367" , "#FB4D3D" , "#3B5249","#4C2E05","#7A8450", "#785964", "#4C2E05", "#F5AC72","#083D77" , "#DA4167" , "#F4D35E" , "#49DCB1" , "#48284A" , "#F26419" ];
+	var conference = _.filter(data , function(obj){
+		return obj.name === "Conference Path";
+	});
+
+	var conferencePathArrayRaw = _.filter(data, function(obj){
+		return obj.parentid === conference[0].id;
+	})
+
+	var conferencePathFinal = _.reduce(conferencePathArrayRaw, function(result, value, key){
+		var obj = {};
+		obj.id = value.id;
+		obj.color = colors[key];
+		result.push(obj);
+		return result;
+	},[]);
+
+	conferencePathArray = conferencePathFinal;
+	// console.log("conf path" , conferencePathFinal);
+}
+
+
+
+
+
+function buildTable(topics, data, conferencePathArray) {
 	$('#schedule-topic').empty();
-	console.log("topics2",topics);
 	var newDataset = _.filter(topics , function(o){
 		return o.date == data;
 	});
 
 	console.log("Build Table New Dataset: " , newDataset);
+
+
+
+	// conference path implement
+	_.map(newDataset , function(obj){
+		// console.log("HERE" , obj.categoryIDs);
+	});
 
 	var rooms = _.chain(newDataset).map(function(obj){
 		return obj.room;
@@ -177,7 +234,7 @@ function buildTable(topics, data) {
 	buildHeaderRooms(rooms);
 
 	_.map(newDataset , function(obj){
-		buildCard(rooms,obj);
+		buildCard(rooms,obj, conferencePathArray);
 	});
 }
 
@@ -199,11 +256,21 @@ function buildHeaderRooms(arg) {
 }
 
 
-function buildCard(rooms, obj) {
+function buildCard(rooms, obj, conferencePathArray) {
 
+	// console.log(obj);
+	var colorArray = _.filter(conferencePathArray, function(o){
+		return _.includes(obj.categoryIDs, o.id)
+	});
 
-	var colors = ["#083D77" , "#DA4167" , "#F4D35E" , "#49DCB1" , "#48284A" , "#F26419" , "#A5243D" , "#5F7367" , "#FB4D3D" , "#3B5249"];
-	var randomColor = Math.floor(Math.random() * colors.length);
+	var color = "";
+	// console.log(colorArray);
+
+	if (_.size(colorArray) > 0) {
+		color = colorArray[0].color;
+	}
+
+	// var randomColor = Math.floor(Math.random() * colors.length);
 
 	var timeslotArray = buildTimeSlotsArray();
 	var offsetTop = _.indexOf(timeslotArray, obj.start) * cardUnitVertical;
@@ -211,7 +278,7 @@ function buildCard(rooms, obj) {
 	var cardHeight = (_.indexOf(timeslotArray, obj.finish) - _.indexOf(timeslotArray, obj.start)) * cardUnitVertical;
 	// console.log(offsetTop, offsetLeft, cardHeight);
 	var output = "";
-	output += '<div class="topic" style="background-color: ' + colors[randomColor] + '; position: absolute; left:'+offsetLeft+ 'px; top: '+offsetTop+'px; height: '+cardHeight+'px; width: '+cardUnitHorizontal+'px;">';
+	output += '<div class="topic" style="background-color: ' + color + '; position: absolute; left:'+offsetLeft+ 'px; top: '+offsetTop+'px; height: '+cardHeight+'px; width: '+cardUnitHorizontal+'px;">';
 	output += '<span>' + obj.title + '</span>';
 	output += '</div>'
 	$("#schedule-topic").append(output);
