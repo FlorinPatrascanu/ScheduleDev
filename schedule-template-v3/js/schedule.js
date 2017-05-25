@@ -153,7 +153,7 @@ function buildConferencePathSelect(data){
 	// return output;
 }
 function renderHeader(data) {
-	var output = '<div id="schedule-header" class="form-inline">';
+	var output = '<div id="schedule-header" class="form-inline animated fadeIn">';
 	output += '<i class="fa fa-calendar" aria-hidden="true"></i>';
 	output += buildEventSelect();
 	output += buildDaySelect(data);
