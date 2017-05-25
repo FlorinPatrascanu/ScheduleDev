@@ -25,7 +25,8 @@ body {
 #schedule-timeslots .timeslot span {
 	display: inline-block;
 	/*width: 50px;*/
-	line-height: 40px;
+	line-height: 30px;
+	line-height: 1;
 }
 // #schedule-timeslots .timeslot:nth-child(4n + 6) span {
 // 	border-bottom: 1px solid #ff3232;
@@ -53,7 +54,13 @@ body {
         opacity: 0.8;
     font-weight: 600;
     font-size: 13px;
+    transition: all 0.3s ease-out;
+    transition: opacity 0.3s ease-in;
    
+}
+#schedule-topic .topic .content {
+	height: 100%;
+	padding: 0 1rem 1rem;
 }
 
 #schedule-wrapper {
@@ -63,4 +70,12 @@ body {
 
 #schedule-plan {
 	    background-color: #f7f7f7;
+}
+
+.filter-out {
+	opacity: 0.05 !important;
+}
+.filter-in {
+	opacity: 1 !important;
+	// left: 0 !important;
 }

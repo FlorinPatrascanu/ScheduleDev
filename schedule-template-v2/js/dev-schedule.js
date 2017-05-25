@@ -3,6 +3,8 @@
 $(function(){
 	// INIT
 
+
+
 	var timeslotArray = buildTimeSlotsArray();
 	renderTimeslots(timeslotArray);
 
@@ -11,31 +13,64 @@ $(function(){
 	}).then(function(){
 		return getCategories();
 	}).then(function(data){
-		console.log("GET CATEGORIES DATA" , data);
+		// console.log("GET CATEGORIES DATA" , data);
 		return conferencePathArray = getConferancePathArray(data);
 	}).then(function(){		
 		return getTopics();
 	}).then(function(data){
 
 		handleTopics(data);
-
 		var optionValue = $("#triggerDayChange").val();
 
-		console.log("conferencePathArray",conferencePathArray);
-
+		console.log(topics);
+		buildConferenceFilters(conferencePathArray);
 		buildTable(topics, optionValue, conferencePathArray);
+
+		//after render
+		var currentCategoryIds = [];
+		$('#schedule-topic .topic').each(function(){
+			var categoryId= $(this).attr("data-conference-id");
+			console.log(categoryId);
+			if(categoryId != undefined) {
+				currentCategoryIds.push(categoryId);
+			}
+			
+		});
+		console.log(currentCategoryIds)
 
 
 		// Handle Day Change
 		$('#triggerDayChange').on("change",  function(){
 			var selectValue = $(this).val();
 			buildTable(topics, selectValue, conferencePathArray);
+
+			//reset conference path selecet
+			if($('#conference-path').length) {
+				$('#conference-path').val("");
+			}
+			
 		});
 
-		// $('#triggerDayChange').trigger("change", function(){
-		// 	console.log("test23423432423")
-		// });
-		// handleDayChangeEvent();
+		// conference path event
+
+		$('#conference-path').on("change", function(){
+			var value = $(this).val();
+			console.log("changed");
+			if (value == "") {
+				$("#schedule-topic .topic").removeClass("filter-in").removeClass("filter-out");	
+			} else {
+				$("#schedule-topic .topic").each(function(){
+					if($(this).attr("data-conference-id") == value) {
+						$(this).addClass("filter-in").removeClass("filter-out");
+					} else {
+						$(this).removeClass("filter-in").addClass("filter-out");
+					}
+				});
+			}
+			
+		});
+
+		
 	});
 });
 
@@ -116,7 +151,17 @@ function buildSelects(data) {
 	deferred.resolve("buildselects");
 	return deferred.promise();
 }
+function buildConferenceFilters(data){
+	var output = "";
+	output += '<select id="conference-path" class="form-control">';
+	output += '<option value="">Select a conference path</option>';
+	_.map(data, function(o){
+		output += '<option value='+o.id+'>'+o.name+'</option>';
+	});
+	output += '</select>';
 
+	$('#triggerDayChange').after(output);
+}
 
 // function handleDayChangeEvent() {
 
@@ -174,7 +219,7 @@ function getCategories() {
 		dataType: 'jsonp'
 	})
 	.done(function(response){
-		console.log("AJAX CALL CATEGORIES " , response);
+		// console.log("AJAX CALL CATEGORIES " , response);
 		deferred.resolve(response);
 	})
 	.fail(function(error) {
@@ -187,6 +232,7 @@ function getCategories() {
 function getConferancePathArray(data) {
 	// console.log("handle cat", result);
 	var colors = ["#083D77" , "#DA4167" , "#F4D35E" , "#49DCB1" , "#48284A" , "#F26419" , "#A5243D" , "#5F7367" , "#FB4D3D" , "#3B5249","#4C2E05","#7A8450", "#785964", "#4C2E05", "#F5AC72","#083D77" , "#DA4167" , "#F4D35E" , "#49DCB1" , "#48284A" , "#F26419" ];
+
 	var conference = _.filter(data , function(obj){
 		return obj.name === "Conference Path";
 	});
@@ -194,11 +240,12 @@ function getConferancePathArray(data) {
 	var conferencePathArrayRaw = _.filter(data, function(obj){
 		return obj.parentid === conference[0].id;
 	})
-
+// console.log("conferences",conferencePathArrayRaw);
 	var conferencePathFinal = _.reduce(conferencePathArrayRaw, function(result, value, key){
 		var obj = {};
 		obj.id = value.id;
 		obj.color = colors[key];
+		obj.name = value.name;
 		result.push(obj);
 		return result;
 	},[]);
@@ -217,7 +264,7 @@ function buildTable(topics, data, conferencePathArray) {
 		return o.date == data;
 	});
 
-	console.log("Build Table New Dataset: " , newDataset);
+	// console.log("Build Table New Dataset: " , newDataset);
 
 
 
@@ -230,7 +277,7 @@ function buildTable(topics, data, conferencePathArray) {
 		return obj.room;
 	}).uniq().value();
 
-	console.log("Rooms: " , rooms);
+	// console.log("Rooms: " , rooms);
 
 	buildHeaderRooms(rooms);
 
@@ -265,10 +312,12 @@ function buildCard(rooms, obj, conferencePathArray) {
 	});
 
 	var color = "#909090";
-	console.log(colorArray);
+	var conferencePathId = "";
+	// console.log(colorArray);
 
 	if (_.size(colorArray) > 0) {
 		color = colorArray[0].color;
+		conferencePathId = 'data-conference-id="'+colorArray[0].id+'"';
 	}
 
 	// var randomColor = Math.floor(Math.random() * colors.length);
@@ -279,9 +328,11 @@ function buildCard(rooms, obj, conferencePathArray) {
 	var cardHeight = (_.indexOf(timeslotArray, obj.finish) - _.indexOf(timeslotArray, obj.start)) * cardUnitVertical;
 	// console.log(offsetTop, offsetLeft, cardHeight);
 	var output = "";
-	output += '<div class="topic" style="background-color: ' + color + '; position: absolute; left:'+offsetLeft+ 'px; top: '+offsetTop+'px; height: '+cardHeight+'px; width: '+cardUnitHorizontal+'px;">';
+	output += '<div class="topic" '+conferencePathId+'style="position: absolute; left:'+offsetLeft+ 'px; top: '+offsetTop+'px; height: '+cardHeight+'px; width: '+cardUnitHorizontal+'px;">';
+	output += '<div class="content" style="background-color: ' + color + ';">';
 	output += '<span>' + obj.title + '</span>';
-	output += '</div>'
+	output += '</div>';
+	output += '</div>';
 	$("#schedule-topic").append(output);
 }
 
