@@ -9,7 +9,14 @@ body {
   height: 100vh;
   width: 100vw;
   overflow: auto;
+  padding-top: 7rem;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
+#schedule .hours:nth-child(2n+2) {
+  background-color: #fbfbfb;
+}
+
 .form-control {
   border-radius: 0px;
   border-color: #000;
@@ -50,6 +57,7 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 9999;
+  backround-color: #fff;
 }
 #loading.active {
   display: flex;
@@ -80,4 +88,16 @@ body {
   font-size: 1.5rem;
   margin-right: 1rem;
   font-weight: 400;
+}
+
+#schedule .intervals {
+  display: flex;
+  justify-content: space-between;
+   padding-left: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;    
+    border-bottom: 1px solid #efeeee;
+}
+#schedule .hours:first-child {
+  border-top: 1px solid #efeeee;
 }
