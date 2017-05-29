@@ -1,5 +1,5 @@
 var scheduleConfig = {
-  timeframe: [8,20],
+  timeframe: [8,23],
   gridHeightCell: 40,
   gridWidthCell: 300,
 }
@@ -58,6 +58,21 @@ function loading(arg) {
     }, 300);
   }
 }
+function getPartnerId(array) {
+  var partnerIdArray = _.filter(array , function(o){
+            return o.name == "Presenting Partner";
+        }); 
+
+        var partnerExists = _.size(partnerIdArray) > 0 ? true : false;
+        var partnerId = "";
+        if (partnerExists == true) {
+          partnerId = partnerIdArray[0].id;
+        } else {
+          partnerId = "PARTNER_DOES_NOT_EXIST";          
+        }
+
+        return partnerId;
+}
 function conferenceArray(data){
   var colors = ["#ff3636" , "#f322a2" , "#a72fdc" , "#7031f3" , "#4679ff" , "#05caf3" , "#20ec9f" , "#42ec20" , "#f3e910" , "#a90000" , "#a90067" , "#8500a9" , "#5e00a9", "#2000a9" , "#0065a9" , "#00a988", "#00a91b" , "#6aa900", "#a95c00"];
 
@@ -114,9 +129,26 @@ function getData(event){
   var daysUrl = 'http://api.eventpoint.com/2.3/program/days?code='+eventId+'&apikey=' + eventApi;
   var topicsUrl = 'http://api.eventpoint.com/2.3/program/topics?code='+eventId+'&apikey=' + eventApi;
   var categoriesUrl = 'https://api.eventpoint.com/2.3/program/categories?code='+eventId+'&apikey=' + eventApi;
+  var roomsUrl = 'https://api.eventpoint.com/2.3/program/rooms?code='+eventId+'&apikey=' + eventApi;
+  var speakersUrl = 'https://api.eventpoint.com/2.3/program/speakers?code='+eventId+'&apikey=' + eventApi;
   loading(true);
-  $.when(GetAPIData(daysUrl),GetAPIData(topicsUrl),GetAPIData(categoriesUrl)).then(function(v1,v2,v3){
+  $.when(GetAPIData(daysUrl),GetAPIData(topicsUrl),GetAPIData(categoriesUrl),GetAPIData(roomsUrl),GetAPIData(speakersUrl)).then(function(v1,v2,v3,v4,v5){
     var conferencePathArray = conferenceArray(v3);
+    // console.log("rooms here : " , v4);
+    console.log(v1);
+    console.log(v2);
+    console.log(v3);
+    console.log(v4);
+    console.log(v5);
+    console.log("PRESENTING....");
+
+
+
+    // console.log(_.includes(v3 , o.id));
+
+
+
+    // console.log("v2",v2);
     var scheduleData = _.reduce(v1, function(result, value, key){
       var date = value.date;
       // date = date.split('T')[0];
@@ -132,29 +164,75 @@ function getData(event){
       })
       .reduce(function(result, value, key){
         var obj = {};
+        var roomsArray = _.chain(v4)
+                            .filter(function(o){
+                                return o.name == value.room;
+                            })
+                            .uniqBy("id")
+                            .value();
+        
+        
+
+       
+        var partnerId = getPartnerId(v3);
+                 
+        // console.log("SPEAKERS IDS " , speakersArray);
+
+
+
+        // console.log("PARTNER ID: " , partnerId);
+
         obj.title = value.title;
+        obj.speakers = _.reduce(value.speakerids , function(result , value , key){
+          var obj = {};
+          var speakersName = _.filter(v5.results , function(o){
+            return o.id == value;
+          });
+
+          if(_.size(speakersName) > 0) {
+            obj.name = speakersName[0].name;
+          } else {
+            obj.name = null;
+          }
+
+          obj.id = value;
+          result.push(obj);
+          return result;
+        },[]);
         obj.id = value.id;
+        obj.sessionCode = value.code;
         obj.description = value.description;
         obj.publishingStatus = value.publishingstatus;
-        obj.room = value.room;
+        obj.room = {};
+        obj.room.title = value.room;
+        obj.room.capacity = roomsArray[0].capacity;
+        obj.room.id = roomsArray[0].id;
         obj.categoryids = value.categoryids;
         obj.start = moment(value.start).utcOffset(eventTimeAdjust).format("HH:mm");
         obj.finish = moment(value.finish).utcOffset(eventTimeAdjust).format("HH:mm");
                       // console.log("timeadjust", Math.abs(eventTimeAdjust), "times:",obj.start, "timesoriginal", value.start);
 
-                      obj.conferencePath = _.filter(conferencePathArray, function(object){
-                        return _.includes(value.categoryids, object.id)
-                      });
+        obj.conferencePath = _.filter(conferencePathArray, function(object){
+          return _.includes(value.categoryids, object.id)
+        });
 
-                      result.push(obj);
-                      return result;
+        var isPartner = _.includes(value.categoryids, partnerId); 
 
-                    },[])
+        if(isPartner === true) {
+          obj.isPartner = true;
+        } else {
+          obj.isPartner = false;
+        }
+        result.push(obj);
+        return result;
+
+        },[])
       .sortBy("start")
       .value();
       result.push(obj);
       return result;
     },[]);
+
 
     $("#schedule").empty().removeClass("animated fadeOut"); // CLEARS SCHEDULE TABLE
     deferred.resolve(scheduleData);
@@ -238,17 +316,27 @@ function buildDaySelect(data){
   $("#header-event-select").val(event.id);
 }
 function renderRooms(data){
+  // console.log("dataro",data)
   var rooms = _.chain(data.topics)
               .reduce(function(result, value, key){
-                result.push(value.room);
+                var obj = {};
+
+                obj.name = value.room.title;
+                obj.capacity = value.room.capacity;
+                obj.id =  value.room.id;
+
+                result.push(obj);
                 return result;
               },[])
-              .uniq()
+              .uniqBy("id")
+              .sortBy("capacity")
               .value();
+
+  // console.log("rooms",rooms)
   var output = "";
   output += '<div id="header-rooms" class="animated fadeIn">';
-  _.map(rooms, function(val){
-    output += '<div class="item">'+val+'</div>'
+  _.map(rooms, function(o){
+    output += '<div class="item">'+o.name+' ('+ o.capacity+')</div>'
   });
   output += '</div>';
 
@@ -275,6 +363,7 @@ function renderGrid(timeframe){
 }
 
 function renderCard(o, topics){
+
   var timeTable = createFlatTimeGridArray();
   var rooms = _.chain(topics)
               .reduce(function(result, value, key){
@@ -285,9 +374,16 @@ function renderCard(o, topics){
               .value();
   var offsetLeft = _.indexOf(rooms, o.room)*scheduleConfig.gridWidthCell;
   var offsetTop = _.indexOf(timeTable, o.start)*scheduleConfig.gridHeightCell;
+  
   var height = (_.indexOf(timeTable, o.finish) - _.indexOf(timeTable, o.start))*scheduleConfig.gridHeightCell;
+
   output = "";
-  output += '<div class="item" style="width:'+scheduleConfig.gridWidthCell+'px; height:'+height+'px; top:'+offsetTop+'px; left:'+offsetLeft+'px;">';
+  if(o.isPartner === true) { 
+    output += '<div class="item partner" style="width:'+scheduleConfig.gridWidthCell+'px; height:'+height+'px; top:'+offsetTop+'px; left:'+offsetLeft+'px;">';
+  } else {
+    output += '<div class="item" style="width:'+scheduleConfig.gridWidthCell+'px; height:'+height+'px; top:'+offsetTop+'px; left:'+offsetLeft+'px;">';
+  }
+  
   output += '<div class="content">';
   output += '<div class="conference-wrapper">';
   _.map(o.conferencePath, function(o){
@@ -295,11 +391,79 @@ function renderCard(o, topics){
   });
   output += '</div>';
   output += '<h2>'+o.title+'</h2>';
-  // output += '<p>'+o.start+'</p>';
+  if(isSmallCard(o.start , o.finish) === true) {
+    output += renderNarrowSpeakers(o.speakers);
+  } else {
+    output += renderSpeakers(o.speakers);
+  }
   output += '</div>';
+
+  output += '<div class="content-hidden">';
+  output += '<p>' + o.sessionCode + '</p>';
+  output += '<p>' + o.room.title + '</p>';
+  output += '<p>' + o.start + " - " + o.finish + '</p>';
+
+  output += '</div>'
+
   output += '</div>';
   return output;
 }
+
+
+function renderNarrowSpeakers(arr) {
+  var output = '';
+  var arrayWithoutNull = _.filter(arr, function(o){
+    return o.name !== null;
+  });
+  if(_.size(arrayWithoutNull ) > 0 ) {
+    output += '<div class="speakers">';  
+    output += '<div class="speaker-icon"><i class="fa fa-user" aria-hidden="true"></i></div>';  
+    output += '<div class="speaker-content">';
+    output += '<p>...</p>';
+    output += '</div>';
+    output += '</div>';
+  }
+
+  return output;
+}
+
+
+
+function renderSpeakers(arr) {
+  var output = '';
+  var arrayWithoutNull = _.filter(arr, function(o){
+    return o.name !== null;
+  });
+  if(_.size(arrayWithoutNull) > 0 ) {
+    output += '<div class="speakers">';  
+    output += '<div class="speaker-icon"><i class="fa fa-user" aria-hidden="true"></i></div>';
+    output += '<div class="speaker-content">';
+    _.map(arrayWithoutNull , function(o){
+        output += '<p>' + o.name + '</p>';
+    });
+
+    output += '</div>';
+    output += '</div>';
+  }
+  return output;
+}
+
+
+function isSmallCard(start , end) {
+  
+  var timeslots = createFlatTimeGridArray();
+  var result = (_.indexOf(timeslots , end)) - (_.indexOf(timeslots , start));
+  
+  if(result <= 2) {
+    return true;
+  } else {
+    return false;
+  }
+    
+}
+
+
+
 function renderTable(data) {
   // console.log(data.topics);
   $("#event").remove();
@@ -345,6 +509,7 @@ function Schedule(data, event){
     });
     var event = eventSelectedArray[0];
     $.when(getData(event)).then(function(data){
+      console.log("DATA",data)
       Schedule(data, event); //event = need to send event information also for select to have the proper event value already selected;
     });
 
@@ -358,6 +523,7 @@ function Schedule(data, event){
     });
     var event = eventSelectedArray[0];
     $.when(getData(event)).then(function(data){
+
       Schedule(data, event); //event = need to send event information also for select to have the proper event value already selected;
     });
 
