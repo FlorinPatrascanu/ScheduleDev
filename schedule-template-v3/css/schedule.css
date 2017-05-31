@@ -119,8 +119,15 @@ body {
   position: absolute;
   padding: 0 0.5rem;
   padding-bottom: 2px;
+<<<<<<< HEAD
   transition: opacity 0.4s ease-in; 
   perspective: 1000;
+=======
+  transition: opacity 0.4s ease-in;
+  
+ 
+
+>>>>>>> 85f02e5e6c31cf3748f4228ad8738427a518a930
 }
 #event .item .conference {
   width: 20px;
@@ -155,12 +162,18 @@ body {
   transition: transform 0.15s ease-out, background-color 0.4s ease-in;
   /*position: relative;*/
 
+<<<<<<< HEAD
  
+=======
+>>>>>>> 85f02e5e6c31cf3748f4228ad8738427a518a930
 
 }
-
+#event .item:hover .content  {
+  transform: scale(1.05);
+}
 
 #event .item .content-hidden {
+<<<<<<< HEAD
   /*font-size: 0.8em;
   background-color: rebeccapurple;
   color: white;
@@ -187,6 +200,15 @@ body {
 .content-hidden p {
   margin-bottom: 0.2em;
 }
+=======
+  display: none;
+
+}
+
+
+
+
+>>>>>>> 85f02e5e6c31cf3748f4228ad8738427a518a930
 #event .item.partner .content {
   background-color: #394861;
 }
@@ -198,9 +220,10 @@ body {
   align-items: flex-start;
   font-size: 0.7em;
   line-height: 1rem;
-  position: absolute;
-  left: 1rem;
-  bottom: 1rem;
+  // position: absolute;
+  // left: 1rem;
+  // bottom: 1rem;
+  margin-top: 0.3rem;
 }
 
 #event .item .content .speakers i {
@@ -209,6 +232,7 @@ body {
 
 #event .item .content .speakers p {
   margin: 0;
+  font-style: italic;
 }
 
 /*#event .item .content:hover {

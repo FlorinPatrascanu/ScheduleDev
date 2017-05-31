@@ -384,7 +384,7 @@ function renderCard(o, topics){
   var offsetTop = _.indexOf(timeTable, o.start)*scheduleConfig.gridHeightCell;
   // console.log(offsetTop,  _.indexOf(timeTable, o.start), o.start, o); 
   var height = (_.indexOf(timeTable, o.finish) - _.indexOf(timeTable, o.start))*scheduleConfig.gridHeightCell;
-
+  console.log(offsetLeft, o);
   output = "";
   if(o.isPartner === true) { 
     output += '<div class="item partner" style="width:'+scheduleConfig.gridWidthCell+'px; height:'+height+'px; top:'+offsetTop+'px; left:'+offsetLeft+'px;">';
