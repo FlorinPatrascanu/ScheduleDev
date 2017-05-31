@@ -317,6 +317,7 @@ function buildDaySelect(data){
 }
 function renderRooms(data){
   // console.log("dataro",data)
+  $('#header-rooms').remove()
   var rooms = _.chain(data.topics)
               .reduce(function(result, value, key){
                 var obj = {};
@@ -333,8 +334,9 @@ function renderRooms(data){
               .value();
 
   // console.log("rooms",rooms)
+  var width = _.size(rooms)*scheduleConfig.gridWidthCell + 100;
   var output = "";
-  output += '<div id="header-rooms" class="animated fadeIn">';
+  output += '<div id="header-rooms" class="animated fadeIn" style="width: '+width+'px;">';
   _.map(rooms, function(o){
     output += '<div class="item">'+o.name+' ('+ o.capacity+')</div>'
   });
@@ -358,23 +360,29 @@ function renderGrid(timeframe){
   // console.log(output);
 
   $("#schedule").append(output);
-
+  $('#grid').css("width");
   $('#schedule .intervals').css("height",scheduleConfig.gridHeightCell+"px").css("lineHeight", scheduleConfig.gridHeightCell + 'px');
 }
 
 function renderCard(o, topics){
 
   var timeTable = createFlatTimeGridArray();
+  // console.log(timeTable);
   var rooms = _.chain(topics)
               .reduce(function(result, value, key){
                 result.push(value.room);
                 return result;
               },[])
-              .uniq()
+              .uniqBy("id")            
+              .sortBy("capacity")
               .value();
-  var offsetLeft = _.indexOf(rooms, o.room)*scheduleConfig.gridWidthCell;
+
+// console.log(rooms);
+// console.log(_.findIndex(rooms, {"title": o.room.title}));
+  // console.log(offsetLeft, rooms, o.room );           
+  var offsetLeft = _.findIndex(rooms, {"title": o.room.title})*scheduleConfig.gridWidthCell;
   var offsetTop = _.indexOf(timeTable, o.start)*scheduleConfig.gridHeightCell;
-  
+  // console.log(offsetTop,  _.indexOf(timeTable, o.start), o.start, o); 
   var height = (_.indexOf(timeTable, o.finish) - _.indexOf(timeTable, o.start))*scheduleConfig.gridHeightCell;
 
   output = "";
@@ -480,6 +488,7 @@ function Schedule(data, event){
   renderHeader(data, event);
   renderGrid(scheduleConfig.timeframe);
   renderTable(data[0]);
+  $('#grid').css("width", $('#header-rooms').width() +100);
   $('body').on("change", "#header-day-select", function(){
    var value = $(this).val();
    var dataFilteredByDate = _.filter(data, function(o){
@@ -552,8 +561,52 @@ function Schedule(data, event){
   });
 
 
+  $('#schedule').on("scroll", function(e){
+    // console.log();
+    $("#header-rooms").css("top", $(this).scrollTop() + 64);
+  });
+
+$('body').on("mouseenter",".item", function(){
+    $(this).trigger("showExtra");
+});
+$('body').on("mouseleave",".item", function(){
+    $(this).trigger("hideExtra");
+});
 
 
+function fadeOutElement(arg){
+  var deferred = $.Deferred();
+  arg.removeClass("fadeIn").addClass("animated fadeOut");
+  setTimeout(function(){
+     deferred.resolve();
+   },300);
+
+  return deferred.promise();
+}
+function showElement(arg){
+  var deferred = $.Deferred();
+  arg.show();
+  deferred.resolve();
+  return deferred.promise();
+}
+$('body').on("showExtra", ".item", function(){
+  var $el = $(this).find(".content");
+  var $el2 = $(this).find(".content-hidden");
+  $($el2).show();
+  $($el).hide();
+  // $.when(fadeOutElement($el)).then(($el).hide());
+  // $.when(showElement($el2)).then($el2.removeClass("fadeOut").addClass("animated fadeIn"));
+  // $(this).find(".content-hidden").addClass("animated fadeIn");
+});
+$('body').on("hideExtra", ".item", function(){
+  var $el = $(this).find(".content");
+  var $el2 = $(this).find(".content-hidden");
+  $($el).show();
+  $($el2).hide();
+  // $.when(fadeOutElement($el2)).then(($el2).hide());
+  // $.when(showElement($el)).then($el.removeClass("fadeOut").addClass("animated fadeIn"));
+  // $(this).find(".content-hidden").addClass("animated fadeIn");
+});
 
 
 });
